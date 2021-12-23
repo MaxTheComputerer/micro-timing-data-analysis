@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import gaussian_kde
+from scipy.stats import gaussian_kde, norm
 from pathlib import Path
 
 def plot_kde(series, axis, resample=False):
@@ -10,7 +10,17 @@ def plot_kde(series, axis, resample=False):
     pdf = kde.evaluate(x_grid)
     axis.plot(x_grid, pdf)
     if resample:
-        axis.hist(kde.resample(len(series)).ravel(), bins=20, density=True, stacked=True, alpha=0.5, label='samples')
+        axis.hist(kde.resample(len(series)).ravel(), bins=20, density=True, stacked=True, alpha=0.5, label='kde samples')
+        axis.legend()
+
+def plot_mle(series, axis, resample=False):
+    x_grid = np.linspace(min(series), max(series), 1000)
+    mean = series.mean()
+    stddev = series.std()
+    pdf = norm.pdf(x_grid, mean, stddev)
+    axis.plot(x_grid, pdf)
+    if resample:
+        axis.hist(np.random.normal(mean, stddev, len(series)), bins=20, density=True, stacked=True, alpha=0.5, label='mle samples')
         axis.legend()
 
 def plot_separately():
@@ -18,7 +28,7 @@ def plot_separately():
     df = pd.concat([pd.read_csv(file) for file in files])
     df = df[df['Is_included_in_grid'] == 1]
     df = df[df['Phase'].notna()]
-    df['Offset'] = df['Phase'] - df['Metric_location']
+    df['Offset'] = (df['Phase'] - df['Metric_location']) * (10/3)
     metric_locations = df['Metric_location'].unique()
     metric_locations.sort()
 
@@ -27,7 +37,8 @@ def plot_separately():
     for i in range(len(metric_locations)):
         location = metric_locations[i]
         series = df[df['Metric_location'] == location]['Offset']
-        plot_kde(series, axs.flat[i], resample=True)
+        plot_mle(series, axs.flat[i], resample=True)
+        #plot_kde(series, axs.flat[i], resample=False)
     plt.show()
 
 def plot_together():
@@ -35,13 +46,16 @@ def plot_together():
     df = pd.concat([pd.read_csv(file) for file in files])
     df = df[df['Is_included_in_grid'] == 1]
     df = df[df['Phase'].notna()]
+    df['Phase'] = 3 * df['Phase']
     metric_locations = df['Metric_location'].unique()
     metric_locations.sort()
 
     for location in metric_locations:
         series = df[df['Metric_location'] == location]['Phase']
         plt.hist(series, bins=20, density=True, stacked=True, alpha=0.5, label='data')
-        plot_kde(series, plt)
+        plot_mle(series, plt)
+        #plot_kde(series, plt)
+    plt.xticks(np.arange(0, 12, 1.0))
     plt.show()
 
 plot_together()
