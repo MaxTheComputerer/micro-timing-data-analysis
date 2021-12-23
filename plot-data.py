@@ -28,7 +28,7 @@ def plot_separately():
     df = pd.concat([pd.read_csv(file) for file in files])
     df = df[df['Is_included_in_grid'] == 1]
     df = df[df['Phase'].notna()]
-    df['Offset'] = (df['Phase'] - df['Metric_location']) * (10/3)
+    df['Offset'] = (df['Phase'] - df['Metric_location']) * 3
     metric_locations = df['Metric_location'].unique()
     metric_locations.sort()
 
@@ -58,4 +58,4 @@ def plot_together():
     plt.xticks(np.arange(0, 12, 1.0))
     plt.show()
 
-plot_together()
+plot_separately()
