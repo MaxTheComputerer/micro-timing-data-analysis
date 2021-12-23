@@ -2,10 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import gaussian_kde
-from tabulate import tabulate
 from pathlib import Path
-
-instruments = ['Dundun-1']
 
 def plot_kde(series, axis, resample=False):
     kde = gaussian_kde(series)
@@ -17,22 +14,21 @@ def plot_kde(series, axis, resample=False):
         axis.legend()
 
 def plot_separately():
-    for instrument in instruments:
-        files = Path().glob(f'data/*.csv')
-        df = pd.concat([pd.read_csv(file) for file in files])
-        df = df[df['Is_included_in_grid'] == 1]
-        df = df[df['Phase'].notna()]
-        df['Offset'] = df['Phase'] - df['Metric_location']
-        metric_locations = df['Metric_location'].unique()
-        metric_locations.sort()
+    files = Path().glob(f'data/*.csv')
+    df = pd.concat([pd.read_csv(file) for file in files])
+    df = df[df['Is_included_in_grid'] == 1]
+    df = df[df['Phase'].notna()]
+    df['Offset'] = df['Phase'] - df['Metric_location']
+    metric_locations = df['Metric_location'].unique()
+    metric_locations.sort()
 
-        axs = df.hist('Offset', by='Metric_location', bins=20, density=True, stacked=True, alpha=0.5, label='data')
+    axs = df.hist('Offset', by='Metric_location', bins=20, density=True, stacked=True, alpha=0.5, label='data')
 
-        for i in range(len(metric_locations)):
-            location = metric_locations[i]
-            series = df[df['Metric_location'] == location]['Offset']
-            plot_kde(series, axs.flat[i], resample=True)
-        plt.show()
+    for i in range(len(metric_locations)):
+        location = metric_locations[i]
+        series = df[df['Metric_location'] == location]['Offset']
+        plot_kde(series, axs.flat[i], resample=True)
+    plt.show()
 
 def plot_together():
     files = Path().glob(f'data/*.csv')
