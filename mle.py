@@ -2,16 +2,18 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-files = Path().glob(f'data/*.csv')
+from config import *
+
+files = Path().glob(f'data/{NAME}/*.csv')
 df = pd.concat([pd.read_csv(file) for file in files])
-df = df[df['Is_included_in_grid'] == 1]
-df = df[df['Phase'].notna()]
-df['Offset'] = (df['Phase'] - df['Metric_location']) * 3
-metric_locations = df['Metric_location'].unique()
+df = df[df[VALID] == 1]
+df = df[df[PHASE].notna()]
+df['Offset'] = (df[PHASE] - df[METRIC_LOC]) * 3
+metric_locations = df[METRIC_LOC].unique()
 metric_locations.sort()
 
 for location in metric_locations:
-    series = df[df['Metric_location'] == location]['Offset']
+    series = df[df[METRIC_LOC] == location]['Offset']
     mean = series.mean()
     stddev = series.std()
     beat = int(np.floor(location))
