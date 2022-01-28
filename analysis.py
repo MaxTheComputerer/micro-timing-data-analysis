@@ -16,7 +16,7 @@ blue_danube_processed = Piece('blue-danube', [2,2,2], [1])
 blue_danube_processed.load_processed('Onset_time', 'Metric_location', 'Is_included_in_grid', 'Phase')
 
 blue_danube_unprocessed = Piece('blue-danube-unprocessed', [2,2,2], [1])
-blue_danube_unprocessed.load_from_onsets('Onset_time')
+blue_danube_unprocessed.load_from_onsets('TIME')
 
 # Suku
 def suku_plot():
