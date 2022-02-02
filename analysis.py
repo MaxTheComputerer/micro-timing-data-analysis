@@ -1,19 +1,19 @@
 from piece import Piece
 
 suku = Piece('suku', [3,3,3,3])
-suku.load_processed('Onset_time', 'Metric_location', 'Is_included_in_grid', 'Phase')
+suku.load_processed('Onset_time', 'Cycle_number', 'Metric_location', 'Metric_location_index', 'Is_included_in_grid', 'Phase')
 
 manjanin = Piece('manjanin', [3,3,3,3])
-manjanin.load_processed('onsets_time', 'subdivision', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
+manjanin.load_processed('onsets_time', 'cycle', 'subdivision', 'subdivision_index', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
 
 maraka = Piece('maraka', [3,3,3,3])
-maraka.load_processed('onsets_time', 'subdivision', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
+maraka.load_processed('onsets_time', 'cycle', 'subdivision', 'subdivision_index', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
 
 woloso = Piece('woloso', [3,3,3,3])
-woloso.load_processed('onsets_time', 'subdivision', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
+woloso.load_processed('onsets_time', 'cycle', 'subdivision', 'subdivision_index', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
 
 blue_danube_processed = Piece('blue-danube', [2,2,2], [1])
-blue_danube_processed.load_processed('Onset_time', 'Metric_location', 'Is_included_in_grid', 'Phase')
+blue_danube_processed.load_processed(onset='Onset_time', metric_loc='Metric_location', valid='Is_included_in_grid', phase='Phase')
 
 blue_danube_unprocessed = Piece('blue-danube-unprocessed', [2,2,2], [1])
 blue_danube_unprocessed.load_from_onsets('TIME')
@@ -28,6 +28,9 @@ def suku_tempo():
 def suku_mle():
     suku.print_mle()
 
+def suku_rhythm(num_of_samples, int_output=True, instrument='Jembe-1'):
+    print(suku.rhythm_sequence(instrument, num_of_samples, int_output))
+
 
 # Manjanin
 def manjanin_plot():
@@ -38,6 +41,9 @@ def manjanin_tempo():
 
 def manjanin_mle():
     manjanin.print_mle()
+
+def manjanin_rhythm(num_of_samples, int_output=True, instrument='Jembe1'):
+    print(manjanin.rhythm_sequence(instrument, num_of_samples, int_output))
 
 
 # Maraka
@@ -50,6 +56,9 @@ def maraka_tempo():
 def maraka_mle():
     maraka.print_mle()
 
+def maraka_rhythm(num_of_samples, int_output=True, instrument='Jembe1'):
+    print(maraka.rhythm_sequence(instrument, num_of_samples, int_output))
+
 
 # Woloso
 def woloso_plot():
@@ -60,6 +69,9 @@ def woloso_tempo():
 
 def woloso_mle():
     woloso.print_mle()
+
+def woloso_rhythm(num_of_samples, int_output=True, instrument='Jembe1'):
+    print(woloso.rhythm_sequence(instrument, num_of_samples, int_output))
 
 
 # Blue Danube

@@ -47,11 +47,13 @@ class Piece:
     # Processed is defined as having columns for onsets, metric locations, validity, and phase of each note
     # The names of the columns representing each of these must be passed in as strings
     # Offset is calculated and it and Phase are converted to pulse units
-    def load_processed(self, onset=None, metric_loc=None, valid=None, phase=None):
+    def load_processed(self, onset=None, cycle_num=None, metric_loc=None, metric_loc_index=None, valid=None, phase=None, filter=''):
         if onset and metric_loc and valid and phase:
-            self._load_joined()
+            self._load_joined(filter)
             self.onset = onset
+            self.cycle_num = cycle_num
             self.metric_loc = metric_loc
+            self.metric_loc_index = metric_loc_index
             self.valid = valid
             self.phase = phase
             self.df['Offset'] = (self.df[self.phase] - self.df[self.metric_loc]) * self.beat_division
@@ -61,14 +63,14 @@ class Piece:
             self.df = self.df[self.df[self.valid] == 1]
             self.df = self.df[self.df[self.phase].notna()]
         else:
-            print("Please provide column names for onset times, metric locations, phase, and valid point")
+            print("Please provide column names for onset times, cycle numbers, metric locations, metric location indicies, phase, and valid point")
 
     # Loads a piece which is unprocessed, i.e. only has onset values
     # Estimates metric locations and phase for data with onsets for only and all beats
     # Assumes that only onsets on exact beats are included, the first onset is the first beat, and all beats are included with no discontinuities
-    def load_from_onsets(self, onset=None):
+    def load_from_onsets(self, onset=None, filter=''):
         if onset:
-            dfs = self._load_separately()
+            dfs = self._load_separately(filter)
             for df in dfs:
                 # Remove any incomplete bars from the end (apart from its first note)
                 df.drop(df.tail((len(df) % self.beats) - 1).index, inplace=True)
@@ -265,3 +267,68 @@ class Piece:
         print('Mean duration:', dur.mean())
 
         plt.show()
+
+
+    # Analyses the rhythm patterns for a given instrument and generates a random sequence of cycles according to cycle transition probabilities
+    # If int_output is True, the output will be a list of integers. Each integer's binary expansion corresponds to which metrical locations are onsets
+    # Otherwise, the output will be a list of lists
+    def rhythm_sequence(self, instrument, num_of_samples, int_output=False):
+        dfs = self._load_separately(instrument)
+        cycle_onsets = []
+        starting_cycles = []
+
+        for df in dfs:
+            df.drop(df[df[self.valid] != 1].index, inplace=True)
+            df.drop(df[df[self.phase].isna()].index, inplace=True)
+            cycles = df[self.cycle_num].unique()
+            first = True
+            for cycle in cycles:
+                onsets = []
+                locs = df[df[self.cycle_num] == cycle][self.metric_loc_index].unique()
+                for i in range(self.pulse_units):
+                    # Record whether there is an onset at this position in this cycle
+                    is_played = 1 if i+1 in locs else 0
+                    onsets.append(is_played)
+
+                # Convert list of 1s and 0s to an integer
+                number = int("".join(str(i) for i in onsets),2)
+                cycle_onsets.append(number)
+                if first:
+                    starting_cycles.append(number)
+                first = False
+
+        # Count transitions between cycles
+        trans_counts = {}
+        for i in range(len(cycle_onsets)-1):
+            num = cycle_onsets[i]
+            next = cycle_onsets[i+1]
+            if num not in trans_counts:
+                trans_counts[num] = {}
+            if next not in trans_counts[num]:
+                trans_counts[num][next] = 0
+            trans_counts[num][next] += 1
+
+        # Calculate transition probabilities
+        trans_probs = {}
+        for (k,v) in trans_counts.items():
+            trans_probs[k] = {k1: v1 / sum(v.values()) for k1, v1 in v.items()}
+
+        # Helper function to take an integer and return its binary expansion as a list
+        def to_binary(n):
+            return [int(x) for x in bin(n)[2:].zfill(self.pulse_units)]
+
+        # Generate random sequence of cycles
+        num = np.random.choice(starting_cycles)
+        if int_output:
+            nums = [num]
+        else:
+            nums = [to_binary(num)]
+        for i in range(num_of_samples):
+            probs = trans_probs[num]
+            next = np.random.choice(list(probs.keys()), p=list(probs.values()))
+            if int_output:
+                nums.append(next)
+            else:
+                nums.append(to_binary(next))
+            num = next
+        return nums
