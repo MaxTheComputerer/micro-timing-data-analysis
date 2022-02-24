@@ -12,11 +12,8 @@ maraka.load_processed('onsets_time', 'cycle', 'subdivision', 'subdivision_index'
 woloso = Piece('woloso', [3,3,3,3])
 woloso.load_processed('onsets_time', 'cycle', 'subdivision', 'subdivision_index', 'is_valid_subdivision_assignment', 'relative_location_within_the_cycle_democratic')
 
-blue_danube_processed = Piece('blue-danube', [2,2,2], [1])
-blue_danube_processed.load_processed(onset='Onset_time', metric_loc='Metric_location', valid='Is_included_in_grid', phase='Phase')
-
-blue_danube_unprocessed = Piece('blue-danube-unprocessed', [2,2,2], [1])
-blue_danube_unprocessed.load_from_onsets('TIME')
+blue_danube = Piece('blue-danube', [2,2,2], [1])
+blue_danube.load_from_onsets('TIME')
 
 # Suku
 def suku_plot():
@@ -76,15 +73,7 @@ def woloso_rhythm(num_of_samples, int_output=True, instrument='Jembe1'):
 
 # Blue Danube
 def blue_danube_plot():
-    blue_danube_processed.plot_histogram(separately=True)
+    blue_danube.plot_histogram(separately=True)
 
 def blue_danube_mle():
-    blue_danube_processed.print_mle()
-
-
-# Blue Danube (unprocessed)
-def blue_danube_unprocessed_plot():
-    blue_danube_unprocessed.plot_histogram(separately=True)
-
-def blue_danube_unprocessed_mle():
-    blue_danube_unprocessed.print_mle()
+    blue_danube.print_mle()

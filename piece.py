@@ -56,9 +56,9 @@ class Piece:
             self.metric_loc_index = metric_loc_index
             self.valid = valid
             self.phase = phase
-            self.df['Offset'] = (self.df[self.phase] - self.df[self.metric_loc]) * self.beat_division
             # Convert phase to be in pulse units
             self.df[self.phase] = self.df[self.phase] * self.beat_division
+            self.df['Offset'] = self.df[self.phase] - (self.df[self.metric_loc_index] - 1)
             # Filter invalid or nan values
             self.df = self.df[self.df[self.valid] == 1]
             self.df = self.df[self.df[self.phase].notna()]
