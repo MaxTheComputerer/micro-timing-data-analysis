@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
-from scipy.stats import gaussian_kde, norm
+from scipy.stats import gaussian_kde, norm, ttest_1samp
 from sklearn.mixture import GaussianMixture
 from tabulate import tabulate
 
@@ -22,18 +22,22 @@ class Piece:
         self.pulse_units = sum(beat_divisions)
         self.mixture_metric_locations = mixture_metric_locations
 
+    # Private method which gets the Path objects for all .csv files for this piece
+    # Can be filtered by any files with a given string in them
+    def _get_paths(self, filter=''):
+        filename = f'*{filter}*.csv' if filter else '*.csv'
+        return Path().glob(f'data/{self.name}/{filename}')
+
     # Private method that loads all .csv files for a piece and concatenates them into one dataframe
     # Can be filtered by any files with a given string in them
     def _load_joined(self, filter=''):
-        filename = f'*{filter}*.csv' if filter else '*.csv'
-        files = Path().glob(f'data/{self.name}/{filename}')
+        files = self._get_paths(filter)
         self.df = pd.concat([pd.read_csv(file) for file in files])
 
     # Private method that loads all .csv files for a piece and returns them as a list of dataframes
     # Can be filtered by any files with a given string in them
     def _load_separately(self, filter=''):
-        filename = f'*{filter}*.csv' if filter else '*.csv'
-        files = Path().glob(f'data/{self.name}/{filename}')
+        files = self._get_paths(filter)
         return [pd.read_csv(file) for file in files]
 
     # Print the piece's dataframe (or optionally, any table recognised by tabulate) to the console
@@ -68,16 +72,22 @@ class Piece:
     # Loads a piece which is unprocessed, i.e. only has onset values
     # Estimates metric locations and phase for data with onsets for only and all beats
     # Assumes that only onsets on exact beats are included, the first onset is the first beat, and all beats are included with no discontinuities
-    def load_from_onsets(self, onset=None, filter=''):
+    def load_from_onsets(self, onset=None, filter='', dfs=None, drop=True):
         if onset:
-            dfs = self._load_separately(filter)
+            if dfs is None:
+                dfs = self._load_separately(filter)
             for df in dfs:
-                # Remove any incomplete bars from the end (apart from its first note)
-                df.drop(df.tail((len(df) % self.beats) - 1).index, inplace=True)
 
                 # Perform calculations to estimate phase
                 df['Cycle_number'] = (df.index // self.beats) + 1
                 df['Metric_location'] = df.index % self.beats
+
+                if drop:
+                    # Remove any incomplete bars from the end (apart from its first note)
+                    #df.drop(df.tail((len(df) % self.beats) - 1).index, inplace=True)
+                    last_loc = int(df.iloc[-1]['Metric_location'])
+                    df.drop(df.tail(last_loc).index, inplace=True)
+
                 cycle_start_index = df.index - df['Metric_location']
                 cycle_end_index = (cycle_start_index + self.beats) % len(df)
                 cycle_start_onset = df.iloc[cycle_start_index][onset].reset_index(drop=True)
@@ -91,7 +101,7 @@ class Piece:
                 df['Is_included_in_grid'] = 1
 
                 # Remove any incomplete bars from the end
-                df.drop(df.tail(len(df) % self.beats).index, inplace=True)
+                #df.drop(df.tail(len(df) % self.beats).index, inplace=True)
 
                 # Filter invalid or nan values
                 df = df[df['Phase'].notna()]    
@@ -102,6 +112,7 @@ class Piece:
             self.metric_loc = 'Metric_location'
             self.valid = 'Is_included_in_grid'
             self.phase = 'Phase'
+            self.df_list = dfs
         else:
             print("Please provide column name for onset times")
 
@@ -153,7 +164,7 @@ class Piece:
         metric_locations.sort()
 
         if separately:
-            axs = df.hist('Offset', by=self.metric_loc, bins=20, density=True, stacked=True, alpha=0.5, label='data')
+            axs = df.hist('Offset', by=self.metric_loc, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 1.0), label='data')
             if mle or kde:
                 for i in range(len(metric_locations)):
                     location = metric_locations[i]
@@ -169,7 +180,7 @@ class Piece:
         else:
             for location in metric_locations:
                 series = df[df[self.metric_loc] == location][self.phase]
-                plt.hist(series, bins=20, density=True, stacked=True, alpha=0.5, label='data')
+                plt.hist(series, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 1.0), label='data')
                 if mle:
                     if self.mixture_metric_locations and location in self.mixture_metric_locations:
                         self._plot_mixture_mle(series, plt)
@@ -332,3 +343,33 @@ class Piece:
                 nums.append(to_binary(next))
             num = next
         return nums
+
+    # Performs a one-sample t-test on a given metric location to determine if there is significant micro-timing in the data
+    # Tests if the sample mean is significantly different from the population mean of 0
+    # Plots a histogram for each piece in the dataset, and prints their p-values, means, and if it was significant or not
+    def statistical_test(self, test_metric_location, significance=0.05, filter=''):
+        dfs = self.df_list
+        dfs_new = []
+        file_paths = list(self._get_paths(filter))
+        i = 0
+
+        for df in dfs:
+            piece_name = file_paths[i].stem
+            df['Piece'] = piece_name
+            df_filtered = df[(df['Metric_location'] == test_metric_location) & (df['Phase'] < test_metric_location + 1)]
+            offsets_filtered = df_filtered['Offset']
+
+            # one-sample t-test
+            _, p_value = ttest_1samp(offsets_filtered, popmean=0)
+            sample_mean = offsets_filtered.mean()
+
+            df['p_value'] = p_value
+            df_filtered = df[(df['Metric_location'] == test_metric_location) & (df['Phase'] < test_metric_location + 1)]
+
+            dfs_new.append(df_filtered)
+            print(f'{i} - {piece_name}: p={p_value}, mean={sample_mean}, significant={p_value < significance}')
+            i += 1
+            
+        df_all = pd.concat(dfs_new)
+        df_all.hist('Offset', by='Piece', bins=10, density=True, stacked=True)
+        plt.show()

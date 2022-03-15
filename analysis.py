@@ -15,6 +15,12 @@ woloso.load_processed('onsets_time', 'cycle', 'subdivision', 'subdivision_index'
 blue_danube = Piece('blue-danube', [2,2,2], [1])
 blue_danube.load_from_onsets('TIME')
 
+waltz_auto = Piece('waltz-auto', [2,2,2])
+waltz_auto.load_from_onsets('Onset')
+
+waltz_manual = Piece('waltz-manual', [2,2,2])
+waltz_manual.load_from_onsets('Onset')
+
 # Suku
 def suku_plot():
     suku.plot_histogram()
@@ -77,3 +83,25 @@ def blue_danube_plot():
 
 def blue_danube_mle():
     blue_danube.print_mle()
+
+
+# Waltz (automatic beat tracking)
+def waltz_auto_plot():
+    waltz_auto.plot_histogram(separately=True)
+
+def waltz_auto_mle():
+    waltz_auto.print_mle()
+
+def waltz_auto_stats():
+    waltz_auto.statistical_test(1)
+
+
+# Waltz (manual beat tracking)
+def waltz_manual_plot():
+    waltz_manual.plot_histogram(separately=True)
+
+def waltz_manual_mle():
+    waltz_manual.print_mle()
+
+def waltz_manual_stats():
+    waltz_manual.statistical_test(1)
