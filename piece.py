@@ -50,7 +50,8 @@ class Piece:
     # Loads a piece which has already been processed
     # Processed is defined as having columns for onsets, metric locations, validity, and phase of each note
     # The names of the columns representing each of these must be passed in as strings
-    # Offset is calculated and it and Phase are converted to pulse units
+    # Offset is calculated and it is converted to quarter lengths
+    # Phase is converted to pulse units
     def load_processed(self, onset=None, cycle_num=None, metric_loc=None, metric_loc_index=None, valid=None, phase=None, filter=''):
         if onset and metric_loc and valid and phase:
             self._load_joined(filter)
@@ -60,14 +61,18 @@ class Piece:
             self.metric_loc_index = metric_loc_index
             self.valid = valid
             self.phase = phase
-            # Convert phase to be in pulse units
-            self.df[self.phase] = self.df[self.phase] * self.beat_division
-            self.df['Offset'] = self.df[self.phase] - (self.df[self.metric_loc_index] - 1)
+            # Calculate offset
+            self.df['Offset'] = self.df[self.phase] - self.df[self.metric_loc]
+            # Convert to quarter lengths
+            self.df['Offset_pulse_units'] = self.df['Offset'] * self.beat_division
+            self.df['Offset'] = self.df['Offset_pulse_units'] / 2
+            # Convert phase to pulse units
+            self.df[self.phase] = self.df['Offset_pulse_units'] + (self.df[self.metric_loc_index] - 1)
             # Filter invalid or nan values
             self.df = self.df[self.df[self.valid] == 1]
             self.df = self.df[self.df[self.phase].notna()]
         else:
-            print("Please provide column names for onset times, cycle numbers, metric locations, metric location indicies, phase, and valid point")
+            print("Please provide column names for onset times, cycle numbers, metric locations, metric location indices, phase, and valid point")
 
     # Loads a piece which is unprocessed, i.e. only has onset values
     # Estimates metric locations and phase for data with onsets for only and all beats
@@ -96,7 +101,7 @@ class Piece:
                 isochronous_beat_duration = cycle_duration / self.beats
                 isochronous_onset = cycle_start_onset + (df['Metric_location'] * isochronous_beat_duration)
                 offset_seconds = df[onset] - isochronous_onset
-                df['Offset'] = (offset_seconds / isochronous_beat_duration) * self.beat_division
+                df['Offset'] = (offset_seconds / isochronous_beat_duration) * (self.beat_division / 2)
                 df['Phase'] = df['Offset'] + df['Metric_location']
                 df['Is_included_in_grid'] = 1
 
