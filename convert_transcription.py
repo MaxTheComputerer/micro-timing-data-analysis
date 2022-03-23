@@ -13,12 +13,12 @@ def make_bar(bar):
     new_bar = "use_bpm get[:tempo]\nbar do\n"
     for symbol in bar:
         if symbol == '.':
-            new_bar += "add_rest -1\n"
+            new_bar += "add_rest 1\n"
         elif len(symbol) == 1:
             new_bar += "jembe1 '" + symbol_lookup[symbol] + "'\n"
         elif len(symbol) == 2:
             for s in list(symbol):
-                new_bar += "jembe1 '" + symbol_lookup[s] + "', -2\n"
+                new_bar += "jembe1 '" + symbol_lookup[s] + "', 2\n"
         else:
             raise ValueError("Unrecognised symbol")
     new_bar += "end\n"

@@ -29,4 +29,4 @@ beats_sec = T_coef[B]
 
 output_path = Path() / 'data' / 'waltz-auto' / (title + '.txt')
 np.savetxt(output_path, beats_sec)
-print('Saved to', str(output_path))
+print('Saved to', str(output_path.resolve()))
