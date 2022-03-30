@@ -61,13 +61,13 @@ class Piece:
             self.metric_loc_index = metric_loc_index
             self.valid = valid
             self.phase = phase
-            # Calculate offset
-            self.df['Offset'] = self.df[self.phase] - self.df[self.metric_loc]
-            # Convert to quarter lengths
-            self.df['Offset_pulse_units'] = self.df['Offset'] * self.beat_division
+            # Calculate phase in pulse units
+            self.df[self.phase] = self.df[self.phase] * self.beat_division
+            # Calculate offset in pulse units
+            self.df['Offset_pulse_units'] = self.df[self.phase] - (self.df[self.metric_loc_index] - 1)
+            # Convert offset to quarter lengths
             self.df['Offset'] = self.df['Offset_pulse_units'] / 2
-            # Convert phase to pulse units
-            self.df[self.phase] = self.df['Offset_pulse_units'] + (self.df[self.metric_loc_index] - 1)
+
             # Filter invalid or nan values
             self.df = self.df[self.df[self.valid] == 1]
             self.df = self.df[self.df[self.phase].notna()]
