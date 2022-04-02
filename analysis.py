@@ -1,4 +1,4 @@
-from piece import Piece
+from piece import *
 
 suku = Piece('suku', [3,3,3,3])
 suku.load_processed('Onset_time', 'Cycle_number', 'Metric_location', 'Metric_location_index', 'Is_included_in_grid', 'Phase')
@@ -25,7 +25,19 @@ waltz_manual.load_from_onsets('Onset')
 def suku_plot():
     suku.plot_histogram()
 
+def suku_save():
+    enable_latex_output()
+    suku.plot_histogram('.pgf')
+    disable_latex_output()
+    suku.plot_histogram()
+
 def suku_tempo():
+    suku.tempo('Jembe-2', 95)
+
+def suku_tempo_save():
+    enable_latex_output()
+    suku.tempo('Jembe-2', 95, save_format='.pgf')
+    disable_latex_output()
     suku.tempo('Jembe-2', 95)
 
 def suku_mle():
@@ -40,6 +52,12 @@ def manjanin_plot():
     manjanin.plot_histogram()
 
 def manjanin_tempo():
+    manjanin.tempo('Jembe2', 95.5)
+
+def manjanin_tempo_save():
+    enable_latex_output()
+    manjanin.tempo('Jembe2', 95.5, save_format='.pgf')
+    disable_latex_output()
     manjanin.tempo('Jembe2', 95.5)
 
 def manjanin_mle():
@@ -88,6 +106,12 @@ def blue_danube_mle():
 # Waltz (automatic beat tracking)
 def waltz_auto_plot():
     waltz_auto.plot_histogram(separately=True)
+
+def waltz_auto_save():
+    enable_latex_output()
+    waltz_auto.plot_histogram(separately=True, save_format='.pgf', figsize=(6.5,2))
+    disable_latex_output()
+    waltz_auto.plot_histogram(separately=True, figsize=(6.5,2))
 
 def waltz_auto_mle():
     waltz_auto.print_mle()

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -128,7 +129,7 @@ class Piece:
         mean = series.mean()
         stddev = series.std()
         pdf = norm.pdf(x_grid, mean, stddev)
-        axis.plot(x_grid, pdf)
+        axis.plot(x_grid, pdf, color='black', linewidth=1.0)
         if resample:
             axis.hist(np.random.normal(mean, stddev, len(series)), bins=20, density=True, stacked=True, alpha=0.5, label='MLE samples')
             axis.legend()
@@ -163,13 +164,13 @@ class Piece:
     # Plots a histogram of the distributions of timings for each metric location, either on separate or a combined plot
     # mle (maximum likelihood estimation) and kde (kernel density estimation) arguments being True will fit the corresponding distribution to the data and plot its PDF
     # Optionally also resamples values from the fitted distribution and plots these
-    def plot_histogram(self, separately=False, mle=True, kde=False, resample=False):
+    def plot_histogram(self, separately=False, mle=True, kde=False, resample=False, save_format=None, figsize=(6.5, 1.5)):
         df = self.df
         metric_locations = df[self.metric_loc].unique()
         metric_locations.sort()
-
+        
         if separately:
-            axs = df.hist('Offset', by=self.metric_loc, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 1.0), label='data')
+            axs = df.hist('Offset', by=self.metric_loc, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 0.7), layout=(len(metric_locations)//3, 3), figsize=figsize)
             if mle or kde:
                 for i in range(len(metric_locations)):
                     location = metric_locations[i]
@@ -181,11 +182,25 @@ class Piece:
                             self._plot_mle(series, axs.flat[i], resample=resample)
                     if kde:
                         self._plot_kde(series, axs.flat[i], resample=resample)
-            plt.show()
+                    axs.flat[i].axvline(0, color="grey", linestyle='--', linewidth=1.0, alpha=0.8)
+                    axs.flat[i].set_title(f'Beat {int(location) + 1}')
+                    axs.flat[i].set_xlabel('Metric event')
+                    axs.flat[i].set_ylabel('Density')
         else:
+            if save_format is not None:
+                fig = plt.gcf()
+                fig.set_size_inches(figsize)
+            plt.xlabel('Metric event')
+            plt.ylabel('Density')
+            colour = 0
             for location in metric_locations:
                 series = df[df[self.metric_loc] == location][self.phase]
-                plt.hist(series, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 1.0), label='data')
+                plt.hist(series, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 0.7), color=f'C{colour // self.beat_division}')
+                colour += 1
+
+                loc_index = df[df[self.metric_loc] == location][self.metric_loc_index].iloc[0] - 1
+                plt.axvline(loc_index, color="grey", linestyle='--', linewidth=1.0, alpha=0.8)
+                
                 if mle:
                     if self.mixture_metric_locations and location in self.mixture_metric_locations:
                         self._plot_mixture_mle(series, plt)
@@ -194,7 +209,9 @@ class Piece:
                 if kde:
                     self._plot_mle(series, plt)
             plt.xticks(np.arange(0, self.pulse_units, 1.0))
-            plt.show()
+        if save_format is not None:
+            plt.savefig(self.name + save_format, bbox_inches="tight")
+        plt.show()
 
     # Prints maximum likelihood estimates of the mean and standard deviation of a fitted Normal distribution for each metric location
     # If a Gaussian mixture model was used, the component with smallest mean is chosen
@@ -239,7 +256,7 @@ class Piece:
     # Plots tempo curve for each take and the average tempo, fits curves to the average tempo and plots them, and prints parameters
     # Tempo is averaged with a sliding window of size 10
     # Also calculates and prints average duration of the piece across all takes
-    def tempo(self, beat_instrument, tempo_cutoff):
+    def tempo(self, beat_instrument, tempo_cutoff, save_format=None, figsize=(6,4)):
         dfs = self._load_separately(beat_instrument)
         self.tempo_cutoff = tempo_cutoff
         dfs_new = []
@@ -265,7 +282,9 @@ class Piece:
 
         m = df.groupby(['Progress'], as_index=False).mean()
         m['Average Tempo'] = m['Tempo'].rolling(window=10).mean()
+        m['Tempo stddev'] = m['Tempo'].rolling(window=10).std()
         plt.plot(m['Progress'], m['Average Tempo'])
+        plt.fill_between(m['Progress'], m['Average Tempo'] - m['Tempo stddev'], m['Average Tempo'] + m['Tempo stddev'], color='C0', alpha=0.2)
 
         m = m.dropna()
         popt,_ = curve_fit(self._combinedf, m['Progress'], m['Average Tempo'])
@@ -277,11 +296,19 @@ class Piece:
         print('d =', d)
         print('e =', e)
         print('f =', f)
-        plt.plot(m['Progress'], self._combinedf(m['Progress'],a,b,c,d,e,f))
+        plt.plot(m['Progress'], self._combinedf(m['Progress'],a,b,c,d,e,f), color='black')
 
         dur = df['Duration'].unique()
         print('Mean duration:', dur.mean())
+                
+        plt.title(self.name.capitalize())
+        plt.xlabel('Relative position in the piece (%)')
+        plt.ylabel('Tempo (bpm)')
 
+        if save_format is not None:
+            fig = plt.gcf()
+            fig.set_size_inches(figsize)
+            plt.savefig(self.name + '-tempo' + save_format, bbox_inches="tight")
         plt.show()
 
 
@@ -378,3 +405,21 @@ class Piece:
         df_all = pd.concat(dfs_new)
         df_all.hist('Offset', by='Piece', bins=10, density=True, stacked=True)
         plt.show()
+
+def enable_latex_output():
+    matplotlib.use("pgf")
+    matplotlib.rcParams.update({
+        "pgf.texsystem": "pdflatex",
+        'font.family': 'serif',
+        'text.usetex': True,
+        'pgf.rcfonts': False,
+    })
+
+def disable_latex_output():
+    matplotlib.use('TkAgg')
+    matplotlib.rcParams.update({
+        "pgf.texsystem": "xelatex",
+        'font.family': 'sans-serif',
+        'text.usetex': False,
+        'pgf.rcfonts': True,
+    })

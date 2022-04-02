@@ -71,6 +71,7 @@ $output += "score = stream.Score()\n"
 
 require_relative ARGV[0]
 
+$output += "score.metadata = metadata.Metadata(title='#{$title}')\n"
 $output += "score.show()\n"
 
 puts $output

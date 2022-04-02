@@ -88,7 +88,7 @@ class MXLConverter:
         return output
 
     def convert_score(self, score):
-        output = f'# {score.metadata.title}\n'
+        output = f'$title = "{score.metadata.title}"\n'
         for part in score.parts:
             output += self.convert_part(part)
         return output
