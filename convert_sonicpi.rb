@@ -6,10 +6,10 @@ def in_thread(&block)
     $output += "score.append(part)\n"
 end
 
-def parse_metre_sequence(sequence)
-    if sequence.is_a?(MetreSequence)
+def parse_metre_tree(sequence)
+    if sequence.is_a?(MetreTree)
         ms = "meter.MeterSequence(["
-        ms += sequence.sequence.map{ |m| parse_metre_sequence(m) }.join(',')
+        ms += sequence.sequence.map{ |m| parse_metre_tree(m) }.join(',')
         ms += "])"
         return ms
     else
@@ -59,7 +59,7 @@ def bar(&block)
     block.call
     if $new_metre and $offset > 0
         $output += "ts = measure.bestTimeSignature()\n"
-        $output += "ts.beatSequence = #{parse_metre_sequence($metre)}\n"
+        $output += "ts.beatSequence = #{parse_metre_tree($metre)}\n"
         $output += "measure.insert(0, ts)\n"
         $new_metre = false
     end

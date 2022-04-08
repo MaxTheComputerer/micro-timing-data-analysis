@@ -300,8 +300,7 @@ class Piece:
 
         dur = df['Duration'].unique()
         print('Mean duration:', dur.mean())
-                
-        plt.title(self.name.capitalize())
+        
         plt.xlabel('Relative position in the piece (%)')
         plt.ylabel('Tempo (bpm)')
 
