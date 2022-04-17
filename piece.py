@@ -90,7 +90,6 @@ class Piece:
 
                 if drop:
                     # Remove any incomplete bars from the end (apart from its first note)
-                    #df.drop(df.tail((len(df) % self.beats) - 1).index, inplace=True)
                     last_loc = int(df.iloc[-1]['Metric_location'])
                     df.drop(df.tail(last_loc).index, inplace=True)
 
@@ -105,9 +104,6 @@ class Piece:
                 df['Offset'] = (offset_seconds / isochronous_beat_duration) * (self.beat_division / 2)
                 df['Phase'] = df['Offset'] + df['Metric_location']
                 df['Is_included_in_grid'] = 1
-
-                # Remove any incomplete bars from the end
-                #df.drop(df.tail(len(df) % self.beats).index, inplace=True)
 
                 # Filter invalid or nan values
                 df = df[df['Phase'].notna()]    
