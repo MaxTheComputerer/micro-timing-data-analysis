@@ -72,12 +72,16 @@ $output += "score = stream.Score()\n"
 require_relative ARGV[0]
 
 $output += "score.metadata = metadata.Metadata(title='#{$title}')\n"
-$output += "score.show()\n"
+
+if ARGV.include?("--no-save")
+    $output += "score.show()\n"
+else
+    $output += "score.write('musicxml','#{File.dirname(ARGV[0]) + "\\" + File.basename(ARGV[0], ".*") + "_new.mxl"}')\n"
+end
 
 puts $output
 
-if ARGV.include?("-s")
-    path = File.dirname(ARGV[0]) + "\\" + File.basename(ARGV[0], ".*") + ".py"
-    File.open(path, "w") { |f| f.write $output}
-    puts "Saved to #{path}"
-end
+path = File.basename(ARGV[0], ".*") + "_temp.py"
+File.open(path, "w") { |f| f.write $output}
+system("python", path)
+File.delete(path) if File.exist?(path)

@@ -100,7 +100,7 @@ if __name__ == "__main__":
     score = mxlconverter.load_xml(path)
     converted = mxlconverter.convert_score(score)
     print(converted)
-    if '-s' in sys.argv:
+    if '--no-save' not in sys.argv:
         with open(path.parent / (path.stem + '.rb'), 'w') as file:
             file.write(converted)
         print(f"Saved to {path.parent / (path.stem + '.rb')}")
