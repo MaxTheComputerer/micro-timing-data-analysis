@@ -99,26 +99,12 @@ class MetreTree
     if count == 1
       return MetreTree.new([MetreLeaf.new(fraction)])
     end
-    new_denom = fraction.denominator * (count.to_f / fraction.numerator)
-    new_num = 1
-    new_frac = Rational(1, new_denom)
-
-    if new_denom % 1 != 0 and Math.log2(count) % 1 == 0
-      # If can't partition normally, try subdivision
-      return MetreLeaf.new(fraction).subdivide(Math.log2(count).to_i)
+    new_frac = fraction / count
+    new_sequence = []
+    count.times do
+      new_sequence.append(MetreLeaf.new(new_frac))
     end
-    
-    if new_denom % 1 == 0
-      # Can partition into <count> elements
-      new_sequence = []
-      count.times do
-        new_sequence.append(MetreLeaf.new(new_frac))
-      end
-      return MetreTree.new(new_sequence)
-    else
-      # Can't make partition
-      raise "Can't partition MetreTree #{self.to_s} into #{count} leaves"
-    end
+    return MetreTree.new(new_sequence)
   end
   
   # Equality for MetreTrees is defined by its @sequence list
@@ -143,12 +129,12 @@ class MetreTree
   end
 
   # Returns a Hash of metrical levels to the index of any event at that position which lies exactly on <offset>
-  # Gets all metrical events at <offset> up to a depth of <deepest_level>
-  def metrical_level_indices(offset, deepest_level)
+  # Gets all metrical events at <offset> from a depth of <highest_level> up to <deepest_level>
+  def metrical_level_indices(offset, highest_level, deepest_level)
     raise "Offset #{offset} out of bounds for duration #{self.quarter_length}" if offset >= self.quarter_length or offset < 0
     indices = {}
     # For each metrical level used in the style
-    (0..deepest_level).each do |level|
+    (highest_level..deepest_level).each do |level|
       seq = self.get_level(level)
       position = 0
       # Search through sequence for a MetreLeaf at exactly <offset>
@@ -197,21 +183,24 @@ class MetreTree
   
   # Returns a flat MetreTree at a given metrical level above the beat level
   def _get_multiple_level(level)
-    if level < -1
-      # Recurse
-      if @length % 2 == 0
-        return partition(@length / 2).get_level(level + 1)
-      elsif @length % 3 == 0
-        return partition(@length / 3).get_level(level + 1)
-      end
-    else
-      # Base
-      if @length % 2 == 0
-        return partition(@length / 2)
-      elsif @length % 3 == 0
-        return partition(@length / 3)
+    sequence_below = self.get_level(level + 1)
+    return sequence_below if sequence_below.length == 1
+    new_sequence = []
+
+    cluster_size = Prime.prime_division(sequence_below.length).min_by(&:first).first
+    current_cluster = sequence_below.sequence[0].fraction
+    (1...sequence_below.length).each do |i|
+      element = sequence_below.sequence[i].fraction
+      if i % cluster_size == 0
+        new_sequence.append(current_cluster)
+        current_cluster = element
+      else
+        current_cluster += element
       end
     end
+    new_sequence.append(current_cluster)
+
+    return MetreTree.new(new_sequence.map{ |fraction| MetreLeaf.new(fraction) })
   end
   
   # Returns a flat MetreTree at a given metrical level below the beat level
@@ -334,13 +323,14 @@ class SynchronisedMetre < Metre
   end
 
   # Calculates the timing shift (in quarter lengths) to be applied to a note occurring <current_offset> into the cycle
-  # Includes contributions of all metrical levels down to the <deepest_level> specified by the Style
+  # Includes contributions of all metrical levels from the <highest_level> down to the <deepest_level> specified by the Style
   def get_timing(current_offset)
     return 0 unless @style
     deepest_level = @style.deepest_metrical_level
-    indices = self.metrical_level_indices(current_offset, deepest_level)
+    highest_level = @style.highest_metrical_level
+    indices = self.metrical_level_indices(current_offset, highest_level, deepest_level)
     timing_shift = 0
-    (0..deepest_level).each do |level|
+    (highest_level..deepest_level).each do |level|
       timing_shift += @timings[level][indices[level]] if @timings[level] and indices[level]
     end
     return timing_shift
