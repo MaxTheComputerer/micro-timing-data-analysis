@@ -50,7 +50,7 @@ class MXLConverter:
         return f'add_note {pitches}, {level}, {duration}\n'
 
     def convert_tempo(self, tempo):
-        return f'use_bpm {tempo.number}\n'
+        return f'use_bpm {tempo.getQuarterBPM()}\n'
 
     def convert_measure(self, measure):
         output = 'bar do\n'
