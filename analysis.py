@@ -27,7 +27,7 @@ def suku_plot():
 
 def suku_save():
     enable_latex_output()
-    suku.plot_histogram('.pgf')
+    suku.plot_histogram(save_format='.pgf')
     disable_latex_output()
     suku.plot_histogram()
 

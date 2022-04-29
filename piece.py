@@ -160,13 +160,13 @@ class Piece:
     # Plots a histogram of the distributions of timings for each metric location, either on separate or a combined plot
     # mle (maximum likelihood estimation) and kde (kernel density estimation) arguments being True will fit the corresponding distribution to the data and plot its PDF
     # Optionally also resamples values from the fitted distribution and plots these
-    def plot_histogram(self, separately=False, mle=True, kde=False, resample=False, save_format=None, figsize=(6.5, 1.5)):
+    def plot_histogram(self, separately=False, mle=True, kde=False, resample=False, save_format=None, figsize=(6.52, 1.5)):
         df = self.df
         metric_locations = df[self.metric_loc].unique()
         metric_locations.sort()
         
         if separately:
-            axs = df.hist('Offset', by=self.metric_loc, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 0.7), layout=(len(metric_locations)//3, 3), figsize=figsize)
+            axs = df.hist('Offset', by=self.metric_loc, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 0.7), layout=(len(metric_locations)//3, 3), figsize=figsize, rot=0)
             if mle or kde:
                 for i in range(len(metric_locations)):
                     location = metric_locations[i]
@@ -180,7 +180,7 @@ class Piece:
                         self._plot_kde(series, axs.flat[i], resample=resample)
                     axs.flat[i].axvline(0, color="grey", linestyle='--', linewidth=1.0, alpha=0.8)
                     axs.flat[i].set_title(f'Beat {int(location) + 1}')
-                    axs.flat[i].set_xlabel('Metric event')
+                    axs.flat[i].set_xlabel('Offset')
                     axs.flat[i].set_ylabel('Density')
         else:
             if save_format is not None:
@@ -206,7 +206,8 @@ class Piece:
                     self._plot_mle(series, plt)
             plt.xticks(np.arange(0, self.pulse_units, 1.0))
         if save_format is not None:
-            plt.savefig(self.name + save_format, bbox_inches="tight")
+            plt.savefig(self.name + save_format, bbox_inches="tight", dpi=400)
+            print('Saved to',self.name + save_format)
         plt.show()
 
     # Prints maximum likelihood estimates of the mean and standard deviation of a fitted Normal distribution for each metric location
@@ -252,7 +253,7 @@ class Piece:
     # Plots tempo curve for each take and the average tempo, fits curves to the average tempo and plots them, and prints parameters
     # Tempo is averaged with a sliding window of size 10
     # Also calculates and prints average duration of the piece across all takes
-    def tempo(self, beat_instrument, tempo_cutoff, save_format=None, figsize=(6,4)):
+    def tempo(self, beat_instrument, tempo_cutoff, save_format=None, figsize=(5,3)):
         dfs = self._load_separately(beat_instrument)
         self.tempo_cutoff = tempo_cutoff
         dfs_new = []
