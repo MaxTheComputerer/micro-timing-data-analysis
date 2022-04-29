@@ -76,7 +76,7 @@ $output += "score.metadata = metadata.Metadata(title='#{$title}')\n"
 if ARGV.include?("--no-save")
     $output += "score.show()\n"
 else
-    $output += "score.write('musicxml','#{File.dirname(ARGV[0]) + "\\" + File.basename(ARGV[0], ".*") + "_new.mxl"}')\n"
+    $output += "score.write('musicxml','#{File.dirname(ARGV[0]) + "\\\\" + File.basename(ARGV[0], ".*") + "_new.mxl"}')\n"
 end
 
 puts $output
@@ -84,4 +84,7 @@ puts $output
 path = File.basename(ARGV[0], ".*") + "_temp.py"
 File.open(path, "w") { |f| f.write $output}
 system("python", path)
-File.delete(path) if File.exist?(path)
+
+if not ARGV.include?("--keep-temp")
+    File.delete(path) if File.exist?(path)
+end
