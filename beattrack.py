@@ -1,5 +1,6 @@
 # Use FMP to estimate locations of beats for waltz
 # Usage: python beattrack.py <path_to_audio> <tempo_estimate>
+# Adapted from https://www.audiolabs-erlangen.de/resources/MIR/FMP/C6/C6S3_BeatTracking.html
 
 import sys
 from pathlib import Path
@@ -18,15 +19,16 @@ tempo_est = int(sys.argv[2])
 samplerate = 22050
 penalty_factor = 0.5
 
-x, Fs = librosa.load(str(audio_path), samplerate)
+audio_series, _ = librosa.load(str(audio_path), samplerate)
 
-nov, Fs_nov = libfmp.c6.compute_novelty_spectrum(x, Fs=samplerate, N=2048, H=512, gamma=100, M=10, norm=True)
-nov, Fs_nov = libfmp.c6.resample_signal(nov, Fs_in=Fs_nov, Fs_out=100)
+novelty_function, feature_rate = libfmp.c6.compute_novelty_spectrum(audio_series, Fs=samplerate, N=2048, H=512, gamma=100, M=10, norm=True)
+novelty_function, feature_rate = libfmp.c6.resample_signal(novelty_function, Fs_in=feature_rate, Fs_out=100)
 
-B = libfmp.c6.compute_beat_sequence(nov, convert_tempo(tempo_est), factor=penalty_factor)
-T_coef = np.arange(nov.shape[0]) / Fs_nov
-beats_sec = T_coef[B]
+beat_sequence_samples = libfmp.c6.compute_beat_sequence(novelty_function, convert_tempo(tempo_est), factor=penalty_factor)
+sample_times = np.arange(novelty_function.shape[0]) / feature_rate
+
+beats_sequence_seconds = sample_times[beat_sequence_samples]
 
 output_path = Path() / 'data' / 'waltz-auto' / (title + '.txt')
-np.savetxt(output_path, beats_sec)
+np.savetxt(output_path, beats_sequence_seconds)
 print('Saved to', str(output_path.resolve()))
