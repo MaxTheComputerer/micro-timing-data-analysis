@@ -253,7 +253,7 @@ class Piece:
     # Plots tempo curve for each take and the average tempo, fits curves to the average tempo and plots them, and prints parameters
     # Tempo is averaged with a sliding window of size 10
     # Also calculates and prints average duration of the piece across all takes
-    def tempo(self, beat_instrument, tempo_cutoff, save_format=None, figsize=(5,3)):
+    def tempo(self, beat_instrument, tempo_cutoff, save_format=None, figsize=(6,3.5)):
         dfs = self._load_separately(beat_instrument)
         self.tempo_cutoff = tempo_cutoff
         dfs_new = []
@@ -300,6 +300,9 @@ class Piece:
         
         plt.xlabel('Relative position in the piece (%)')
         plt.ylabel('Tempo (bpm)')
+
+        plt.annotate(f'$y={np.round(a,1)} \ln(x+{np.round(b,1)})+{np.round(c,1)}$', xy=(40,152.84), xytext=(60,135), arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=-0.3"))
+        plt.annotate(f'$y={np.round(d,2)}x^2+{np.round(e,1)}x{int(np.round(f,0))}$', xy=(97,173), xytext=(30,185), arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=-0.3",shrinkB=4))
 
         if save_format is not None:
             fig = plt.gcf()
