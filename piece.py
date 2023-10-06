@@ -191,7 +191,7 @@ class Piece:
             colour = 0
             for location in metric_locations:
                 series = df[df[self.metric_loc] == location][self.phase]
-                plt.hist(series, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 0.7), color=f'C{colour // self.beat_division}')
+                plt.hist(series, bins=20, density=True, stacked=True, alpha=(0.5 if resample else 1), color='#0F6FC6')
                 colour += 1
 
                 loc_index = df[df[self.metric_loc] == location][self.metric_loc_index].iloc[0] - 1
